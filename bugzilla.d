@@ -9,6 +9,7 @@ import std.regex : match;
 import std.string;
 
 import ae.utils.text;
+import ae.net.ietf.headerparse;
 
 struct BugzillaMessage
 {
@@ -25,8 +26,8 @@ bool parseMessage(string message, out BugzillaMessage result)
 
 	// Parse headers
 
-	auto headers = lines.until("").array;
-	bool isBugzilla = headers.any!(s => s.forceValidUTF8.dup.idup.toUpper.startsWith("X-BUGZILLA-"))();
+	auto headerLines = lines.until("").array;
+	bool isBugzilla = headerLines.any!(s => s.forceValidUTF8.dup.idup.toUpper.startsWith("X-BUGZILLA-"))();
 	if (!isBugzilla)
 		return false;
 
@@ -37,21 +38,23 @@ bool parseMessage(string message, out BugzillaMessage result)
 	lines = lines[0..p];
 
 	bool newPost;
-	foreach (header; headers)
-		if (header.skipOver("Subject: ") || header.skipOver("SUBJECT: "))
+	auto headers = parseHeaders(headerLines.join("\n"));
+	foreach (name, value; headers)
+		if (name.toLower() == "subject")
 		{
-			header.findSkip("] ");
-			if (header.startsWith("New: "))
+			auto s = value;
+			s.findSkip("] ");
+			if (s.startsWith("New: "))
 			{
-				header = header[5..$];
+				s = s[5..$];
 				newPost = true;
 			}
-			result.subject = header;
+			result.subject = s;
 		}
 
 	// First line
 
-	lines = lines[headers.length+1..$];
+	lines = lines[headerLines.length+1..$];
 	enforce(lines.length > 2);
 	result.url = lines[0];
 	enforce(result.url.startsWith("http"));
@@ -665,4 +668,100 @@ https://github.com/D-Programming-Language/dmd/pull/3461
 
 EOF", "Wrong comment:\n" ~ bm.comment);
 	assert(bm.properties["Keywords"] == "accepts-invalid, pull");
+
+	/// Wrapped headers
+
+	msg = q"EOF
+Path: digitalmars.com!.POSTED!not-for-mail
+From: via Digitalmars-d-bugs <digitalmars-d-bugs@puremagic.com>
+Newsgroups: digitalmars.D.bugs
+Subject: [Issue 12685] New: Refused foreach index type to span the whole
+ range of the type
+Date: Wed, 30 Apr 2014 11:28:49 +0000
+Organization: Digital Mars
+Lines: 32
+Message-ID: <mailman.49.1398857340.2907.digitalmars-d-bugs@puremagic.com>
+Reply-To: "digitalmars.D.bugs" <digitalmars-d-bugs@puremagic.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 7bit
+X-Trace: digitalmars.com 1398857340 41034 173.45.241.208 (30 Apr 2014 11:29:00 GMT)
+X-Complaints-To: usenet@digitalmars.com
+NNTP-Posting-Date: Wed, 30 Apr 2014 11:29:00 +0000 (UTC)
+To: digitalmars-d-bugs@puremagic.com
+X-Bugzilla-Reason: Forced
+X-Bugzilla-Type: new
+X-Bugzilla-Watch-Reason: None
+X-Bugzilla-Product: D
+X-Bugzilla-Component: DMD
+X-Bugzilla-Version: D2
+X-Bugzilla-Keywords: diagnostic, rejects-valid
+X-Bugzilla-Severity: normal
+X-Bugzilla-Who: bearophile_hugs@eml.cc
+X-Bugzilla-Status: NEW
+X-Bugzilla-Priority: P1
+X-Bugzilla-Assigned-To: nobody@puremagic.com
+X-Bugzilla-Target-Milestone: ---
+X-Bugzilla-Flags: 
+X-Bugzilla-Changed-Fields: bug_id short_desc product version rep_platform
+ op_sys bug_status keywords bug_severity priority component assigned_to
+ reporter
+X-Bugzilla-URL: https://issues.dlang.org/
+Auto-Submitted: auto-generated
+X-Virus-Scanned: clamav-milter 0.97.8 at slice-1.puremagic.com
+X-Virus-Status: Clean
+X-Spam-Status: No, score=1.3 required=15.0 tests=RDNS_DYNAMIC,SPF_FAIL
+ autolearn=no version=3.3.2
+X-Spam-Level: *
+X-Spam-Checker-Version: SpamAssassin 3.3.2 (2011-06-06) on
+ slice-1.puremagic.com
+X-BeenThere: digitalmars-d-bugs@puremagic.com
+X-Mailman-Version: 2.1.16
+Precedence: list
+List-Id: "digitalmars.D.bugs" <digitalmars-d-bugs.puremagic.com>
+List-Unsubscribe: <http://lists.puremagic.com/cgi-bin/mailman/options/digitalmars-d-bugs>, 
+ <mailto:digitalmars-d-bugs-request@puremagic.com?subject=unsubscribe>
+List-Archive: <http://lists.puremagic.com/pipermail/digitalmars-d-bugs/>
+List-Post: <mailto:digitalmars-d-bugs@puremagic.com>
+List-Help: <mailto:digitalmars-d-bugs-request@puremagic.com?subject=help>
+List-Subscribe: <http://lists.puremagic.com/cgi-bin/mailman/listinfo/digitalmars-d-bugs>, 
+ <mailto:digitalmars-d-bugs-request@puremagic.com?subject=subscribe>
+Xref: digitalmars.com digitalmars.D.bugs:65358
+
+https://issues.dlang.org/show_bug.cgi?id=12685
+
+          Issue ID: 12685
+           Summary: Refused foreach index type to span the whole range of
+                    the type
+           Product: D
+           Version: D2
+          Hardware: x86
+                OS: Windows
+            Status: NEW
+          Keywords: diagnostic, rejects-valid
+          Severity: normal
+          Priority: P1
+         Component: DMD
+          Assignee: nobody@puremagic.com
+          Reporter: bearophile_hugs@eml.cc
+
+void main() {
+    ubyte[2 ^^ 8] data1;
+    foreach (ubyte i, x; data1) {}
+    ushort[2 ^^ 16] data2;
+    foreach (ushort i, x; data2) {}
+}
+
+
+
+DMD 2.066alpha gives false error messages:
+
+temp.d(3,5): Error: index type 'ubyte' cannot cover index range 0..256
+temp.d(5,5): Error: index type 'ushort' cannot cover index range 0..65536
+
+--
+EOF";
+
+	assert(parseMessage(msg, bm));
+	assert(bm.subject == bm.properties["Summary"]);
 }

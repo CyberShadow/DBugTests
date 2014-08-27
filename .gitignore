@@ -1,2 +1,7 @@
 *.exe
-*.txt
+*.pdb
+*.ilk
+
+/descript.ion
+comments.txt
+issue.url

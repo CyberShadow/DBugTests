@@ -1,4 +1,4 @@
-import core.sys.windows.windows;
+version(Windows) import core.sys.windows.windows;
 
 import std.algorithm;
 import std.array;
@@ -84,6 +84,8 @@ void saveResults()
 		bool important = relevant && severity == "regression";
 
 		mkdirRecurse(dir);
+
+		version(Windows)
 		dir.setAttributes(FILE_ATTRIBUTE_DIRECTORY
 			| (!relevant ? FILE_ATTRIBUTE_HIDDEN : 0)
 			| (important ? FILE_ATTRIBUTE_OFFLINE : 0)

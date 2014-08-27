@@ -1,0 +1,22 @@
+# data file for the FLTK User Interface Designer (FLUID)
+version 2.1000 
+header_name {.h} 
+code_name {.cxx} 
+gridx 5 
+gridy 5 
+snap 3
+Function {} {open
+} {
+  {fltk::Window} {} {open
+    xywh {368 57 440 105} resizable visible
+  } {
+    {fltk::Button} {} {
+      label {FLTK2 in D?!} selected
+      xywh {0 0 440 36}
+    }
+    {fltk::Slider} {} {
+      label {You'd better believe it!}
+      xywh {0 36 440 50} labelcolor 0xff000000
+    }
+  }
+} 

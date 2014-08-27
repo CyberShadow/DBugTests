@@ -1,0 +1,16 @@
+OPTLINK : Warning 23: No Stack 
+test.obj(test) 
+ Error 42: Symbol Undefined _D10ModuleInfo6__vtblZ
+OPTLINK : Warning 134: No Start Address 
+
+ Start  Stop   Length Name                   Class
+ 00000H 00000H 00000H _TEXT                  CODE 32-bit
+ 00000H 00077H 00078H _DATA                  DATA 32-bit
+ 00078H 00078H 00000H FMB                    DATA 32-bit
+ 00078H 0007BH 00004H FM                     DATA 32-bit
+ 0007CH 0007CH 00000H FME                    DATA 32-bit
+ 00080H 00080H 00000H CONST                  CONST 32-bit
+ 00080H 00080H 00001H _BSS                   BSS 32-bit
+
+ Origin   Group
+ FFFF:F   FLAT

@@ -1,0 +1,2 @@
+This will almost certainly only work on the GNU/Linux implementation of FUSE,
+and the imports are designed to work with Tango, not Phobos.

@@ -1,6 +1,9 @@
 *.exe
 *.pdb
 *.ilk
+*.obj
+
+.svn
 
 /descript.ion
 comments.txt

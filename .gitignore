@@ -1,3 +1,5 @@
+/populate/populate.ini
+
 *.exe
 *.pdb
 *.ilk

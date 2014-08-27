@@ -7,6 +7,7 @@ import std.stdio;
 import std.string;
 
 import ae.sys.sqlite3;
+import ae.utils.sini;
 
 import bugzilla;
 
@@ -14,7 +15,7 @@ void main(string[] args)
 {
 	stderr.writeln("Parsing database...");
 
-	auto db = new SQLite(`C:\Projects\DFeed\data\dfeed.s3db`);
+	auto db = new SQLite(config.dfeedDbPath);
 
 	foreach (string message; db.prepare("SELECT [Message] FROM [Groups] LEFT JOIN [Posts] ON [Posts].[ID]=[Groups].[ID] WHERE [Group]='digitalmars.D.bugs' ORDER BY [ArtNum]").iterate())
 		processMessage(message);
@@ -103,4 +104,18 @@ void writeIfNecessary(string fn, string data)
 {
 	if (!fn.exists || fn.getSize() != data.length)
 		std.file.write(fn, data);
+}
+
+struct ConfigFile
+{
+	string dfeedDbPath;
+}
+immutable ConfigFile config;
+
+shared static this()
+{
+	config = "populate.ini"
+		.readText()
+		.splitLines()
+		.parseStructuredIni!ConfigFile();
 }

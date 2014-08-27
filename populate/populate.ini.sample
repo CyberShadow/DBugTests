@@ -1,0 +1,2 @@
+# Path to DFeed's database file.
+dfeedDbPath = ../../DFeed/data/dfeed.s3db

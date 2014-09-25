@@ -1,0 +1,27 @@
+(success)
+-- https://github.com/D-Programming-Language/dmd/pull/599 --
+test.d(7): Error: Cannot interpret this.A at compile time
+-- https://github.com/D-Programming-Language/dmd/pull/1181 --
+test.d(7): Error: variable this cannot be read at compile time
+test.d(7): Error: Cannot interpret this.A at compile time
+-- https://github.com/D-Programming-Language/dmd/pull/1687 --
+test.d(7): Error: value of 'this' is not known at compile time
+--  --
+
+
+
+
+
+
+
+
+
+
+2.060: (success)
+2.061: test.d(7): Error: variable this cannot be read at compile time
+       test.d(7): Error: Cannot interpret this.A at compile time
+2.062: test.d(7): Error: variable this cannot be read at compile time
+       test.d(7): Error: Cannot interpret this.A at compile time
+2.063: test.d(7): Error: value of 'this' is not known at compile time
+2.064: test.d(7): Error: Internal Compiler Error: CTFE DotType: this.A
+       test.d(7):        while evaluating pragma(msg, __traits(getMember, A, "foo"))

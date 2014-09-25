@@ -1,0 +1,10 @@
+       |bool func(T)()
+       |{
+      1|    return true;
+       |}
+       |
+       |void main()
+       |{
+      1|    assert(func!int() || int.sizeof);
+       |}
+test.d is 100% covered

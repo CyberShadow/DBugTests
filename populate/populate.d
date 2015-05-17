@@ -3,6 +3,8 @@ version(Windows) import core.sys.windows.windows;
 import std.algorithm;
 import std.array;
 import std.file;
+import std.parallelism;
+import std.range;
 import std.stdio;
 import std.string;
 
@@ -13,39 +15,45 @@ import bugzilla;
 
 void main(string[] args)
 {
-	stderr.writeln("Parsing database...");
+	stderr.writeln("Querying database...");
 
 	auto db = new SQLite(config.dfeedDbPath);
 
+	string[] messages;
 	foreach (string message; db.prepare("SELECT [Message] FROM [Groups] LEFT JOIN [Posts] ON [Posts].[ID]=[Groups].[ID] WHERE [Group]='digitalmars.D.bugs' ORDER BY [ArtNum]").iterate())
-		processMessage(message);
+		messages ~= message;
+
+	stderr.writeln("Parsing messages...");
+	BugzillaMessage[] bugzillaMessages = new BugzillaMessage[messages.length];
+	foreach (i; messages.length.iota.parallel)
+		if (!parseMessage(messages[i], bugzillaMessages[i]))
+			bugzillaMessages[i].id = 0;
+
+	stderr.writeln("Adding up results...");
+	foreach (bm; bugzillaMessages)
+		if (bm.id)
+			processMessage(bm);
 
 	stderr.writeln("Creating tree...");
 	saveResults();
 }
 
-string[string][uint] properties;
-string[uint] comments, subjects, urls;
+__gshared string[string][uint] properties;
+__gshared string[uint] comments, subjects, urls;
 
-void processMessage(string message)
+void processMessage(ref BugzillaMessage bm)
 {
-    scope(failure) writeln(message);
-
-	BugzillaMessage bm;
-	if (parseMessage(message, bm))
-	{
-		comments[bm.id] ~= bm.comment;
-		subjects[bm.id] = bm.subject;
-		urls[bm.id] = bm.url;
-		foreach (k, v; bm.properties)
-			properties[bm.id][k] = v;
-	}
+	comments[bm.id] ~= bm.comment;
+	subjects[bm.id] = bm.subject;
+	urls[bm.id] = bm.url;
+	foreach (k, v; bm.properties)
+		properties[bm.id][k] = v;
 }
 
 void saveResults()
 {
 	string[] descriptions;
-	foreach (n; (properties.keys ~ comments.keys).array.sort.uniq)
+	foreach (n; (properties.keys ~ comments.keys).array.sort.uniq.parallel)
 	{
 		auto dir = "../%d".format(n);
 
@@ -95,7 +103,7 @@ void saveResults()
 		writeIfNecessary("%s/comments.txt".format(dir), comments.get(n, null));
 		writeIfNecessary("%s/issue.url".format(dir), "[InternetShortcut]\r\nURL=%s".format(urls[n]));
 
-		descriptions ~= "%s %s".format(n, subject);
+		synchronized descriptions ~= "%s %s".format(n, subject);
 	}
 	std.file.write("../descript.ion", descriptions.join("\n"));
 }

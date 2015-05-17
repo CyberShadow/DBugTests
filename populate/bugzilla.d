@@ -40,7 +40,7 @@ bool parseMessage(string message, out BugzillaMessage result)
 	bool newPost;
 	auto headers = parseHeaders(headerLines.join("\n"));
 	foreach (name, value; headers)
-		if (name.toLower() == "subject")
+		if (name.icmp("subject")==0)
 		{
 			auto s = value;
 			s.findSkip("] ");

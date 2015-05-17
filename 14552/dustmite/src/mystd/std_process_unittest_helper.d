@@ -1,0 +1,1 @@
+import mystd.stdio, mystd.array; void main(string[] args) { write(args.join("\0")); }

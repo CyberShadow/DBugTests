@@ -1,0 +1,2 @@
+ Vector!(double, 2)([nan, nan]) Vector!(double, 2)([nan, nan]) Vector!(double, 2)([nan, nan]) Vector!(double, 2)([nan, nan])
+ Vector!(double, 2)([nan, nan]) Vector!(double, 2)([2.64531e-314, 1.97626e-323]) Vector!(double, 2)([1.26177e-317, 2.64519e-314]) Vector!(double, 2)([1.26194e-317, 2.64533e-314])

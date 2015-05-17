@@ -1,0 +1,41 @@
+--- test.d	2015-04-27 20:23:55.850532961 +0200
++++ test.d	2015-04-26 20:40:15.468630711 +0200
+@@ -113,7 +114,7 @@ 
+   int getNumLoops() { return to!int(loops.length); }
+ }
+ 
+-class UnionFindNode {
++final class UnionFindNode {
+   UnionFindNode parent;
+   BasicBlock bb;
+   SimpleLoop loop;
+@@ -166,7 +167,7 @@ 
+   enum BB_LAST = 6;
+   enum MAXNONBACKPREDS = (32 * 1024);
+ 
+-  pure nothrow
++  @safe pure nothrow
+   {
+     this(CFG _cfg, LSG _lsg) {
+         cfg = _cfg;
+@@ -331,15 +377,15 @@ 
+   {
+     int buildDiamond(int start) {
+         int bb0 = start;
+-        new BasicBlockEdge(cfg, bb0, bb0 + 1);
+-        new BasicBlockEdge(cfg, bb0, bb0 + 2);
+-        new BasicBlockEdge(cfg, bb0 + 1, bb0 + 3);
+-        new BasicBlockEdge(cfg, bb0 + 2, bb0 + 3);
++        BasicBlockEdge(cfg, bb0, bb0 + 1);
++        BasicBlockEdge(cfg, bb0, bb0 + 2);
++        BasicBlockEdge(cfg, bb0 + 1, bb0 + 3);
++        BasicBlockEdge(cfg, bb0 + 2, bb0 + 3);
+         return bb0 + 3;
+     }
+ 
+     void buildConnect(int _start, int _end) {
+-        new BasicBlockEdge(cfg, _start, _end);
++        BasicBlockEdge(cfg, _start, _end);
+     }
+ 
+     int buildStraight(int start, int n) {

@@ -1,0 +1,2 @@
+module foo;
+class Foo { }

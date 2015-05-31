@@ -4,12 +4,14 @@ import std.algorithm;
 import std.array;
 import std.ascii;
 import std.conv;
+import std.datetime;
 import std.exception;
 import std.regex : match;
 import std.string;
 
 import ae.utils.text;
 import ae.net.ietf.headerparse;
+import ae.utils.time;
 
 struct BugzillaMessage
 {
@@ -18,6 +20,7 @@ struct BugzillaMessage
 	string subject;
 	string[string] properties;
 	string comment; /// Incl. "header"
+	SysTime time;
 }
 
 bool parseMessage(string message, out BugzillaMessage result)
@@ -51,6 +54,9 @@ bool parseMessage(string message, out BugzillaMessage result)
 			}
 			result.subject = s;
 		}
+		else
+		if (name == "NNTP-Posting-Date")
+			result.time = value.strip().parseTime!`D, j M Y H:i:s O \(\U\T\C\)`;
 
 	// First line
 

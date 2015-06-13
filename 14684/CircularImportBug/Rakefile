@@ -1,0 +1,51 @@
+require 'paint'
+
+# PRINT AND EXECUTE COMMAND (verbal execute)
+def vexec(cmd, indent = 0)
+  spaces = ' ' * (indent * 2)
+  puts Paint["#{spaces}#{cmd}", "#fa84fd"]
+  system cmd
+end
+
+# JUST A PRETTY PRINT
+def announce_part(part, indent = 0)
+  extradash = '-' * (indent * 2)
+  puts(Paint["#{extradash}----> #{part}", "#7AD25D"])
+end
+
+task :default => :build
+
+task :build do
+  # Check if build dir exist
+  if (!File.exist?('build'))
+    Dir.mkdir('build')
+  else
+    puts("build dir exists, run 'rake clean' first!");
+    next # Terminate
+  end
+
+
+  Dir.chdir('build') do
+    # Compile D source to *.o files
+    announce_part("Compiling D source")
+    Dir.glob("../src/**/*.d").each do |dir|
+      vexec("dmd #{dir} -I../src -c")
+    end
+    puts
+
+    announce_part("Linking and assembling")
+    vexec("dmd *.o")
+    puts
+  end
+end
+
+task :clean do
+  announce_part("Cleaning");
+  vexec("rm -rf ./build")
+  puts
+end
+
+task :run do
+  announce_part("Running Program");
+  vexec("./build/Main")
+end

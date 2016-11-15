@@ -36,9 +36,16 @@ bool parseMessage(string message, out BugzillaMessage result)
 
 	// Strip "signature"
 
-	auto p = lines.countUntil!(line => line == "--" || line == "-- ");
-	enforce(p > 0);
-	lines = lines[0..p];
+	if (lines.endsWith(["", "-- ", "Configure issuemail: https://d.puremagic.com/issues/userprefs.cgi?tab=email", "------- You are receiving this mail because: -------"]))
+		lines = lines[0..$-4];
+	else
+	if (lines.endsWith(["", "-- ", "Configure issuemail: http://d.puremagic.com/issues/userprefs.cgi?tab=email", "------- You are receiving this mail because: -------"]))
+		lines = lines[0..$-4];
+	else
+	if (lines.endsWith(["", "-- "]) || lines.endsWith(["", "--"]))
+		lines = lines[0..$-2];
+
+	//enforce(!lines.canFind("-- ") /*&& !lines.canFind("--")*/, "Sanity check (heuristics)");
 
 	bool newPost;
 	auto headers = parseHeaders(headerLines.join("\n"));
@@ -201,7 +208,7 @@ Thanks,
 
 
 -- 
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.comment.startsWith("The man files"), "Unexpected comment: \n" ~ bm.comment);
@@ -262,7 +269,7 @@ program itself or website.
 
 
 -- 
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.comment.startsWith("------- Comment #1 from unknown"), "Unexpected comment: \n" ~ bm.comment);
@@ -360,7 +367,7 @@ crash dialog.
 -- 
 Configure issuemail: https://d.puremagic.com/issues/userprefs.cgi?tab=email
 ------- You are receiving this mail because: -------
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.id == 11865);
@@ -428,7 +435,7 @@ automatically if the program was started under a debugger, though.
 -- 
 Configure issuemail: https://d.puremagic.com/issues/userprefs.cgi?tab=email
 ------- You are receiving this mail because: -------
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.id == 11865);
@@ -509,11 +516,11 @@ just be an alias for specifying a set of those options.
 -- 
 Configure issuemail: https://d.puremagic.com/issues/userprefs.cgi?tab=email
 ------- You are receiving this mail because: -------
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.comment.startsWith("--- Comment #0 from Brad Anderson"), "Bad comment start: \n" ~ bm.comment);
-	assert(bm.comment.endsWith("came up with the idea for -boundscheck=)\n\n"), "Bad comment end: \n" ~ bm.comment);
+	assert(bm.comment.endsWith("came up with the idea for -boundscheck=)\n"), "Bad comment end: \n" ~ bm.comment);
 	assert(bm.properties["Severity"] == "normal");
 	assert(bm.properties["Summary"] == bm.subject);
 
@@ -586,7 +593,7 @@ Walter Bright <bugzilla@digitalmars.com> changed:
             Version|1.046                       |D1
 
 --
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.comment is null, "Unexpected comment: \n" ~ bm.comment);
@@ -665,13 +672,12 @@ Kenji Hara <k.hara.pg@gmail.com> changed:
 https://github.com/D-Programming-Language/dmd/pull/3461
 
 --
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.comment == q"EOF
 --- Comment #3 from Kenji Hara <k.hara.pg@gmail.com> ---
 https://github.com/D-Programming-Language/dmd/pull/3461
-
 EOF", "Wrong comment:\n" ~ bm.comment);
 	assert(bm.properties["Keywords"] == "accepts-invalid, pull");
 
@@ -766,7 +772,7 @@ temp.d(3,5): Error: index type 'ubyte' cannot cover index range 0..256
 temp.d(5,5): Error: index type 'ushort' cannot cover index range 0..65536
 
 --
-EOF";
+EOF".strip();
 
 	assert(parseMessage(msg, bm));
 	assert(bm.subject == bm.properties["Summary"]);

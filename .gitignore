@@ -4,6 +4,7 @@
 *.pdb
 *.ilk
 *.obj
+*.o
 *.lib
 
 .svn

@@ -107,6 +107,7 @@ void saveResults()
 
 		writeIfNecessary("%s/comments.txt".format(dir), comments.get(n, null));
 		writeIfNecessary("%s/issue.url".format(dir), "[InternetShortcut]\r\nURL=%s".format(urls[n]));
+		writeIfNecessary("%s/issue.desktop".format(dir), "[Desktop Entry]\nURL=%s\nType=Link".format(urls[n]));
 
 		/*{
 			auto ct = SysTimeToFILETIME(creationTimes[n]);

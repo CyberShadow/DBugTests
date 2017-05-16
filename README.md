@@ -29,8 +29,9 @@ Each directory can contain the following files:
  - `comments.txt` - the comments from the issue's discussion,
    including the original issue description. Created by the
    `populate` program.
- - `issue.url` - an Internet shortcut file linking to the respective
-   issue. Created for convenience by the `populate` program.
+ - `issue.url`, `issue.desktop` - an Internet shortcut file linking to
+   the respective issue. Created for convenience by the `populate`
+   program.
 
 The `populate` program
 ----------------------

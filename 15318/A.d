@@ -1,0 +1,3 @@
+module A;
+
+import C;

@@ -1,6 +1,7 @@
 import std.algorithm.iteration;
 import std.algorithm.searching;
 import std.array;
+import std.exception;
 import std.file;
 import std.path;
 import std.process;
@@ -37,7 +38,9 @@ void main()
 			thisExePath
 			.dirName
 			.dirName
-			.buildPath(issue)]).wait();
+			.buildPath(issue)])
+		.wait()
+		.I!(code => enforce(code == 0, "emacsclient failed"));
 
 	issue
 		.I!(issue => "https://issues.dlang.org/show_bug.cgi?id=" ~ issue)

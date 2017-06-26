@@ -36,6 +36,13 @@ void main()
 		.seenFile
 		.touch;
 
+	spawnProcess(["emacsclient",
+			"--no-wait",
+			thisExePath
+			.dirName
+			.dirName
+			.buildPath(issue)]).wait();
+
 	issue
 		.I!(issue => "https://issues.dlang.org/show_bug.cgi?id=" ~ issue)
 		.browse();

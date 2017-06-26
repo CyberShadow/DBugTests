@@ -32,10 +32,6 @@ void main()
 		.filter!(issue => !issue.seenFile.exists)
 		.front;
 
-	issue
-		.seenFile
-		.touch;
-
 	spawnProcess(["emacsclient",
 			"--no-wait",
 			thisExePath
@@ -46,4 +42,8 @@ void main()
 	issue
 		.I!(issue => "https://issues.dlang.org/show_bug.cgi?id=" ~ issue)
 		.browse();
+
+	issue
+		.seenFile
+		.touch;
 }

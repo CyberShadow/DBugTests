@@ -1,7 +1,7 @@
 /bugs/*/*
 !/bugs/*/*.*
 
-/bugs/*/bug.json
+/bugs/*/data.json
 /bugs/*/comments.txt
 /bugs/*/issue.url
 /bugs/*/issue.desktop

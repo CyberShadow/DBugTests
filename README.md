@@ -36,7 +36,7 @@ Each subdirectory can contain the following files:
  - `issue.url`, `issue.desktop` - an Internet shortcut file linking to
    the respective issue. Created for convenience by the `populate`
    program.
- - `bug.json` - machine readable data of the bug. Created by the
+ - `data.json` - machine readable data of the bug. Created by the
    `populate` program.
 
 The `populate` program

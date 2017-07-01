@@ -80,7 +80,7 @@ BugInfo[int] updateBugs()
 	stderr.writeln("Saving bug data...");
 	foreach (id, ref data; result)
 	{
-		auto fn = format!"../bugs/%d/bug.json"(id);
+		auto fn = format!"../bugs/%d/data.json"(id);
 		ensurePathExists(fn);
 		data.toPrettyJson().toFile(fn);
 	}
@@ -92,8 +92,8 @@ BugInfo[int] readBugs()
 {
 	BugInfo[int] result;
 	foreach (de; dirEntries("../bugs", SpanMode.shallow))
-		if (de.isDir && de.buildPath("bug.json").exists)
-			result[de.baseName.to!int] = de.buildPath("bug.json").readText.jsonParse!BugInfo;
+		if (de.isDir && de.buildPath("data.json").exists)
+			result[de.baseName.to!int] = de.buildPath("data.json").readText.jsonParse!BugInfo;
 	return result;
 }
 

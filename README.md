@@ -31,6 +31,8 @@ Each subdirectory can contain the following files:
  - `comments.txt` - the comments from the issue's discussion,
    including the original issue description. Created by the
    `populate` program.
+ - `attachments/` - subdirectory with any attachments posted on the
+   issue. Created by the `populate` program.
  - `issue.url`, `issue.desktop` - an Internet shortcut file linking to
    the respective issue. Created for convenience by the `populate`
    program.
@@ -48,6 +50,9 @@ Run this program to populate the `bugs` directory as described above.
 On the first run, it will download the entire Bugzilla database, but
 on successive runs it will only download incremental updates of the
 bugs modified since the previous run.
+
+Run `populate` with the `--rebuild` switch to rebuild the generated
+local files using the data already previously downloaded.
 
   [1]: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService.html
   [2]: https://github.com/CyberShadow/Digger

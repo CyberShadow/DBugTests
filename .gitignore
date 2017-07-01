@@ -12,6 +12,9 @@
 
 .svn
 *.zip
+*.tar
+*.tar.*
+*.7z
 
 /descript.ion
 comments.txt

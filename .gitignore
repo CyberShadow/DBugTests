@@ -1,7 +1,17 @@
 /bugs/*/*
 !/bugs/*/*.*
 
-/populate/populate.ini
+/bugs/*/bug.json
+/bugs/*/comments.txt
+/bugs/*/issue.url
+/bugs/*/issue.desktop
+/bugs/*/.seen
+
+/bugs/descript.ion
+
+/populate/populate
+/populate/random
+/populate/last-update.txt
 
 *.exe
 *.pdb
@@ -15,10 +25,3 @@
 *.tar
 *.tar.*
 *.7z
-
-/bugs/descript.ion
-comments.txt
-issue.url
-issue.desktop
-.seen
-/populate/populate

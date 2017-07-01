@@ -19,11 +19,11 @@ Structure
 Each issue's files reside in a subdirectory (under the `bugs`
 directory) named by the issue number.
 
-Each directory can contain the following files:
+Each subdirectory can contain the following files:
 
  - `*.d` - test case code.
- - `bisect.ini` - [Digger][4] configuration for regression search.
- - `test.sh` - a test command usable by Digger or [DustMite][5].
+ - `bisect.ini` - [Digger][2] configuration for regression search.
+ - `test.sh` - a test command usable by Digger or [DustMite][3].
    Should exit with non-zero status if the bug occurs with the DMD
    instance in `$PATH`, and zero status otherwise.
    Note that the exit status is reversed for DustMite usage:
@@ -34,37 +34,24 @@ Each directory can contain the following files:
  - `issue.url`, `issue.desktop` - an Internet shortcut file linking to
    the respective issue. Created for convenience by the `populate`
    program.
+ - `bug.json` - machine readable data of the bug. Created by the
+   `populate` program.
 
 The `populate` program
 ----------------------
 
 In the `populate` directory is a program which attempts to dump the
-D issue repository to your disk. It does so by parsing messages sent
-to the [digitalmars.D.bugs group][1], which it obtains from
-[DFeed][2]'s (forum.dlang.org) cache. This is done to avoid excessive
-load on the server hosting the D Bugzilla instance: fetching messages
-from the NNTP server is considerably more efficient than issuing
-tens of thousands of HTTP requests to a PHP webapp.
+D issue repository to your disk, using the [Bugzilla Webservice API][1].
 
-Usage:
+Run this program to populate the `bugs` directory as described above.
 
- 1. Follow the [DFeed setup instructions][3]
- 2. Copy `populate.ini.sample` to `populate.ini` and set the location
-    of DFeed's `dfeed.s3db` database file.
- 3. Create a script which will run DFeed's `nntpdownload` program,
-    and then the `populate` program, e.g.:
-    
-    ```bash
-    ( cd ~/work/DFeed && rdmd nntpdownload )
-    cd populate && rdmd populate
-    ```
+On the first run, it will download the entire Bugzilla database, but
+on successive runs it will only download incremental updates of the
+bugs modified since the previous run.
 
-
-  [1]: http://forum.dlang.org/group/digitalmars.D.bugs
-  [2]: https://github.com/CyberShadow/DFeed
-  [3]: https://github.com/CyberShadow/DFeed#readme
-  [4]: https://github.com/CyberShadow/Digger
-  [5]: https://github.com/CyberShadow/DustMite
+  [1]: https://www.bugzilla.org/docs/4.4/en/html/api/Bugzilla/WebService.html
+  [2]: https://github.com/CyberShadow/Digger
+  [3]: https://github.com/CyberShadow/DustMite
 
 Current goals
 -------------

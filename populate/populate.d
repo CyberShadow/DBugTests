@@ -1,74 +1,114 @@
+import core.time;
+
 version(Windows) import core.sys.windows.windows;
 
-import std.algorithm;
+import std.algorithm.iteration;
+import std.algorithm.searching;
 import std.array;
-import std.datetime;
+import std.conv;
+import std.datetime.systime;
 import std.file;
-import std.parallelism;
-import std.range;
+import std.format;
+import std.getopt;
+import std.path;
 import std.stdio;
 import std.string;
+import std.typecons;
+import std.uni;
 
-import ae.sys.sqlite3;
-import ae.utils.sini;
+import ae.sys.file : ensurePathExists;
+import ae.utils.array;
+import ae.utils.json;
+import ae.utils.time;
 
 import bugzilla;
 
 void main(string[] args)
 {
-	stderr.writeln("Querying database...");
+	bool rebuild;
+	getopt(args,
+		"rebuild", &rebuild,
+	);
 
-	auto db = new SQLite(config.dfeedDbPath);
-
-	string[] messages;
-	foreach (string message; db.prepare("SELECT [Message] FROM [Groups] LEFT JOIN [Posts] ON [Posts].[ID]=[Groups].[ID] WHERE [Group]='digitalmars.D.bugs' ORDER BY [ArtNum]").iterate())
-		messages ~= message;
-
-	stderr.writeln("Parsing messages...");
-	BugzillaMessage[] bugzillaMessages = new BugzillaMessage[messages.length];
-	foreach (i; messages.length.iota.parallel)
-		if (!parseMessage(messages[i], bugzillaMessages[i]))
-			bugzillaMessages[i].id = 0;
-
-	stderr.writeln("Adding up results...");
-	foreach (bm; bugzillaMessages)
-		if (bm.id)
-			processMessage(bm);
+	BugInfo[int] bugs;
+	if (rebuild)
+		bugs = readBugs();
+	else
+		bugs = updateBugs();
 
 	stderr.writeln("Creating tree...");
-	saveResults();
+	saveResults(bugs);
 }
 
-__gshared string[string][uint] properties;
-__gshared string[uint] comments, subjects, urls;
-__gshared SysTime[uint] creationTimes, modificationTimes;
-
-void processMessage(ref BugzillaMessage bm)
+struct BugInfo
 {
-	comments[bm.id] ~= bm.comment;
-	subjects[bm.id] = bm.subject;
-	urls[bm.id] = bm.url;
-	foreach (k, v; bm.properties)
-		properties[bm.id][k] = v;
-	if (bm.id !in creationTimes)
-		creationTimes[bm.id] = bm.time;
-	modificationTimes[bm.id] = bm.time;
+	Bug bug;
+	Comment[] comments;
 }
 
-void saveResults()
+BugInfo[int] updateBugs()
 {
-	string[] descriptions;
-	foreach (n; (properties.keys ~ comments.keys).array.sort().uniq.parallel)
+	auto startTime = getTime() - 1.seconds;
+
+	enum lastTimeFileName = "last-update.txt";
+	auto lastTime = lastTimeFileName.exists
+		? lastTimeFileName.readText.to!StdTime.SysTime()
+		: SysTime.fromUnixTime(0);
+	scope(success)
+		startTime.stdTime.text.toFile(lastTimeFileName);
+
+	stderr.writefln("Fetching bugs...");
+	Bug[] bugs = getBugs(lastTime);
+
+	stderr.writefln("Fetching comments...");
+	auto comments = getComments(bugs.map!(bug => bug.id).array);
+
+	BugInfo[int] result;
+	foreach (bug; bugs)
+		result[bug.id] = BugInfo(bug, comments.get(bug.id, null));
+
+	stderr.writeln("Saving bug data...");
+	foreach (id, ref data; result)
 	{
-		auto dir = "../bugs/%d".format(n);
+		auto fn = format!"../bugs/%d/bug.json"(id);
+		ensurePathExists(fn);
+		data.toPrettyJson().toFile(fn);
+	}
 
-		auto p = properties.get(n, null);
-		auto status = p.get("Status", "NEW");
-		auto severity = p.get("Severity", "?");
+	return result;
+}
+
+BugInfo[int] readBugs()
+{
+	BugInfo[int] result;
+	foreach (de; dirEntries("../bugs", SpanMode.shallow))
+		if (de.isDir && de.buildPath("bug.json").exists)
+			result[de.baseName.to!int] = de.buildPath("bug.json").readText.jsonParse!BugInfo;
+	return result;
+}
+
+void saveResults(BugInfo[int] bugs)
+{
+	enum descriptionFile = "../bugs/descript.ion";
+	string[int] descriptions;
+	if (descriptionFile.exists)
+		descriptions = descriptionFile
+			.readText
+			.splitLines
+			.map!(line => line.findSplit(" "))
+			.map!(x => tuple(x[0].to!int, x[2]))
+			.assocArray;
+
+	foreach (n, ref bug; bugs)
+	{
+		auto dir = format!"../bugs/%d"(n);
+
+		auto status = bug.bug.status;
+		auto severity = bug.bug.severity;
 
 		auto subject = "[%s] %s".format(
 			severity,
-			subjects.get(n, "?"),
+			bug.bug.summary,
 		);
 
 		bool relevant = true;
@@ -77,19 +117,19 @@ void saveResults()
 			relevant = false;
 			subject = "[%s:%s]%s".format(
 				status.toLower(),
-				p.get("Resolution", "?").toLower(),
+				bug.bug.resolution.toLower(),
 				subject,
 			);
 		}
-		if (relevant && p.get("Keywords", null).canFind("pull"))
+		if (relevant && bug.bug.keywords.contains("pull"))
 		{
 			relevant = false;
 			subject = "[pull]" ~ subject;
 		}
-		if (relevant && p.get("Version", null) == "D1")
+		if (relevant && bug.bug.version_ == "D1")
 		{
 			relevant = false;
-			subject = "[" ~ p["Version"] ~ "]" ~ subject;
+			subject = "[" ~ bug.bug.version_ ~ "]" ~ subject;
 		}
 
 		if (!relevant && !dir.exists && n < 12100)
@@ -105,9 +145,19 @@ void saveResults()
 			| (important ? FILE_ATTRIBUTE_OFFLINE : 0)
 		);
 
-		writeIfNecessary("%s/comments.txt".format(dir), comments.get(n, null));
-		writeIfNecessary("%s/issue.url".format(dir), "[InternetShortcut]\r\nURL=%s".format(urls[n]));
-		writeIfNecessary("%s/issue.desktop".format(dir), "[Desktop Entry]\nURL=%s\nType=Link".format(urls[n]));
+		string comments = bug.comments.map!(comment =>
+			format!"--- Comment #%d from <%s> %s ---\n%s\n"(
+				comment.count,
+				comment.creator,
+				comment.creation_time,
+				comment.text,
+			))
+			.join();
+
+		auto url = site ~ "show_bug.cgi?id=" ~ text(n);
+		writeIfNecessary("%s/comments.txt".format(dir), comments);
+		writeIfNecessary("%s/issue.url".format(dir), "[InternetShortcut]\r\nURL=%s".format(url));
+		writeIfNecessary("%s/issue.desktop".format(dir), "[Desktop Entry]\nURL=%s\nType=Link".format(url));
 
 		/*{
 			auto ct = SysTimeToFILETIME(creationTimes[n]);
@@ -115,27 +165,13 @@ void saveResults()
 			SetFileTime
 		}*/
 
-		synchronized descriptions ~= "%s %s".format(n, subject);
+		synchronized descriptions[n] = "%s %s".format(n, subject);
 	}
-	std.file.write("../bugs/descript.ion", descriptions.join("\n"));
+	writeIfNecessary(descriptionFile, descriptions.sortedValues.join("\n"));
 }
 
 void writeIfNecessary(string fn, string data)
 {
-	if (!fn.exists || fn.getSize() != data.length)
+	if (!fn.exists || fn.getSize() != data.length || fn.readText() != data)
 		std.file.write(fn, data);
-}
-
-struct ConfigFile
-{
-	string dfeedDbPath;
-}
-immutable ConfigFile config;
-
-shared static this()
-{
-	config = "populate.ini"
-		.readText()
-		.splitLines()
-		.parseStructuredIni!ConfigFile();
 }

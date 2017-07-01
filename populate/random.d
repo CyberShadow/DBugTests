@@ -23,8 +23,7 @@ alias seenFile = issue =>
 	thisExePath
 	.dirName
 	.dirName
-	.buildPath(issue)
-	.buildPath(".seen");
+	.buildPath("bugs", issue, ".seen");
 
 alias openIssue = line => !line.canFind("[resolved:") && !line.canFind("[?]") && !line.canFind("[pull]");
 
@@ -39,7 +38,7 @@ void main(string[] args)
 		thisExePath
 		.dirName
 		.dirName
-		.buildPath("descript.ion")
+		.buildPath("bugs/descript.ion")
 		.readText()
 		.splitLines()
 	;
@@ -95,7 +94,7 @@ void main(string[] args)
 			thisExePath
 			.dirName
 			.dirName
-			.buildPath(issue)])
+			.buildPath("bugs", issue)])
 		.wait()
 		.I!(code => enforce(code == 0, "emacsclient failed"));
 

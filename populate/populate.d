@@ -60,7 +60,7 @@ void saveResults()
 	string[] descriptions;
 	foreach (n; (properties.keys ~ comments.keys).array.sort().uniq.parallel)
 	{
-		auto dir = "../%d".format(n);
+		auto dir = "../bugs/%d".format(n);
 
 		auto p = properties.get(n, null);
 		auto status = p.get("Status", "NEW");
@@ -117,7 +117,7 @@ void saveResults()
 
 		synchronized descriptions ~= "%s %s".format(n, subject);
 	}
-	std.file.write("../descript.ion", descriptions.join("\n"));
+	std.file.write("../bugs/descript.ion", descriptions.join("\n"));
 }
 
 void writeIfNecessary(string fn, string data)

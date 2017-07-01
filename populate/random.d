@@ -1,15 +1,23 @@
 import std.algorithm.iteration;
 import std.algorithm.searching;
 import std.array;
+import std.conv;
+import std.datetime.date;
+import std.datetime.systime;
 import std.exception;
 import std.file;
+import std.getopt;
+import std.math;
 import std.path;
 import std.process;
 import std.random;
+import std.range.primitives;
+import std.stdio;
 import std.string;
 
 import ae.sys.file;
 import ae.utils.meta;
+import ae.utils.time;
 
 alias seenFile = issue =>
 	thisExePath
@@ -18,20 +26,69 @@ alias seenFile = issue =>
 	.buildPath(issue)
 	.buildPath(".seen");
 
-void main()
+alias openIssue = line => !line.canFind("[resolved:") && !line.canFind("[?]") && !line.canFind("[pull]");
+
+void main(string[] args)
 {
-	auto issue =
+	bool progress;
+	getopt(args,
+		"progress", &progress,
+	);
+
+	auto lines =
 		thisExePath
 		.dirName
 		.dirName
 		.buildPath("descript.ion")
 		.readText()
 		.splitLines()
+	;
+
+	if (progress)
+	{
+		enum topIssue = 17500;
+		long totalIssues = lines
+			.filter!openIssue
+			.map!(line => line.split[0])
+			.filter!(issue => issue.to!int < topIssue)
+			.walkLength;
+		long seenIssues = lines
+			.filter!openIssue
+			.map!(line => line.split[0])
+			.filter!(issue => issue.to!int < topIssue)
+			.filter!(issue => issue.seenFile.exists)
+			.walkLength;
+		auto issueProgress = real(seenIssues) / totalIssues;
+
+		writefln("Progress: %d/%d (%d%%)", seenIssues, totalIssues, cast(int)(issueProgress * 100));
+
+		SysTime startTime = SysTime(Date(2017, 06, 15));
+		SysTime endTime   = SysTime(Date(2018, 04, 01));
+		SysTime now = Clock.currTime();
+		auto totalTime = endTime - startTime;
+		auto elapsed = now - startTime;
+		auto timeProgress = real(elapsed.stdTime) / totalTime.stdTime;
+
+		writefln("Time: %d%%", cast(int)(100*timeProgress));
+
+		auto delta = timeProgress - issueProgress;
+		writefln!"You are %s (by %d%% / %d days / %d issues)"(
+			delta > 0 ? "behind" : "ahead",
+			cast(int)(100 * abs(delta)),
+			cast(long)(abs(delta) * totalTime.stdTime).hnsecs.total!"days",
+			cast(long)(abs(delta) * totalIssues),
+		);
+
+		return;
+	}
+
+	auto issue = lines
 		.randomCover
-		.filter!(line => !line.canFind("[resolved:") && !line.canFind("[?]") && !line.canFind("[pull]"))
+		.filter!openIssue
 		.map!(line => line.split[0])
 		.filter!(issue => !issue.seenFile.exists)
-		.front;
+		.front
+	;
 
 	spawnProcess(["emacsclient",
 			"--no-wait",

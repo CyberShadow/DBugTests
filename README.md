@@ -50,7 +50,13 @@ Usage:
  2. Copy `populate.ini.sample` to `populate.ini` and set the location
     of DFeed's `dfeed.s3db` database file.
  3. Create a script which will run DFeed's `nntpdownload` program,
-    and then the `populate` program.
+    and then the `populate` program, e.g.:
+    
+    ```bash
+    ( cd ~/work/DFeed && rdmd nntpdownload )
+    cd populate && rdmd populate
+    ```
+
 
   [1]: http://forum.dlang.org/group/digitalmars.D.bugs
   [2]: https://github.com/CyberShadow/DFeed

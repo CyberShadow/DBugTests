@@ -16,7 +16,9 @@ Motivation
 Structure
 ---------
 
-Each issue's files reside in a directory named by the issue number.
+Each issue's files reside in a subdirectory (under the `bugs`
+directory) named by the issue number.
+
 Each directory can contain the following files:
 
  - `*.d` - test case code.

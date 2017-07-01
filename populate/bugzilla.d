@@ -62,19 +62,20 @@ SysTime getTime()
 	return time.db_time.parseTime!timeFormat;
 }
 
-static struct Flag
-{
-	int id;
-	string name;
-	int type_id;
-	string creation_date;
-	string modification_date;
-	string status;
-	string setter;
-	string requestee;
-}
 static struct Bug
 {
+	static struct Flag
+	{
+		int id;
+		string name;
+		int type_id;
+		string creation_date;
+		string modification_date;
+		string status;
+		string setter;
+		string requestee;
+	}
+
 	string priority;
 	int[] blocks;
 	string creator;
@@ -194,7 +195,7 @@ Comment[][int] getComments(int[] ids)
 
 	Comment[][int] comments;
 
-	foreach (chunk; ids.chunks(100))
+	foreach (chunk; ids.chunks(1000))
 	{
 		stderr.writefln("  Fetching comments for bugs %d through %d...", chunk[0], chunk[$-1]);
 		auto result = apiCall!Result("Bug.comments", Params(chunk));
@@ -203,4 +204,66 @@ Comment[][int] getComments(int[] ids)
 	}
 
 	return comments;
+}
+
+alias base64 = string;
+alias dateTime = string;
+alias boolean = bool;
+
+struct Attachment
+{
+	base64 data; /// The raw data of the attachment, encoded as Base64.
+	int size; /// The length (in bytes) of the attachment.
+	dateTime creation_time; /// The time the attachment was created.
+	dateTime last_change_time; /// The last time the attachment was modified.
+	int id; /// The numeric id of the attachment.
+	int bug_id; /// The numeric id of the bug that the attachment is attached to.
+	string file_name; /// The file name of the attachment.
+	string summary; /// A short string describing the attachment.
+	string description; /// Also returned as description, for backwards-compatibility with older Bugzillas. (However, this backwards-compatibility will go away in Bugzilla 5.0.)
+	string content_type; /// The MIME type of the attachment.
+	boolean is_private; /// True if the attachment is private (only visible to a certain group called the "insidergroup"), False otherwise.
+	boolean is_obsolete; /// True if the attachment is obsolete, False otherwise.
+	boolean is_patch; /// True if the attachment is a patch, False otherwise.
+	string creator; /// The login name of the user that created the attachment.
+	string attacher; /// Also returned as attacher, for backwards-compatibility with older Bugzillas. (However, this backwards-compatibility will go away in Bugzilla 5.0.)
+	Flag[] flags; /// An array of hashes containing the information about flags currently set for each attachment.
+
+	///Each flag hash contains the following items:
+	struct Flag
+	{
+		int id; /// The id of the flag.
+		string name; /// The name of the flag.
+		int type_id; /// The type id of the flag.
+		dateTime creation_date; /// The timestamp when this flag was originally created.
+		dateTime modification_date; /// The timestamp when the flag was last modified.
+		string status; /// The current status of the flag.
+		string setter; /// The login name of the user who created or last modified the flag.
+		string requestee; /// The login name of the user this flag has been requested to be granted or denied. Note, this field is only returned if a requestee is set.
+	}
+}
+
+Attachment[][int] getAttachments(int[] ids)
+{
+	static struct Params
+	{
+		int[] ids;
+	}
+	static struct Result
+	{
+		Attachment[][string] bugs;
+		Attachment[string] attachments;
+	}
+
+	Attachment[][int] attachments;
+
+	foreach (chunk; ids.chunks(1000))
+	{
+		stderr.writefln("  Fetching attachments for bugs %d through %d...", chunk[0], chunk[$-1]);
+		auto result = apiCall!Result("Bug.attachments", Params(chunk));
+		foreach (id, bugAttachments; result.bugs)
+			attachments[id.to!int] = bugAttachments;
+	}
+
+	return attachments;
 }

@@ -5,8 +5,10 @@ version(Windows) import core.sys.windows.windows;
 import std.algorithm.iteration;
 import std.algorithm.searching;
 import std.array;
+import std.base64;
 import std.conv;
 import std.datetime.systime;
+import std.exception;
 import std.file;
 import std.format;
 import std.getopt;
@@ -44,6 +46,7 @@ struct BugInfo
 {
 	Bug bug;
 	Comment[] comments;
+	Attachment[] attachments;
 }
 
 BugInfo[int] updateBugs()
@@ -63,9 +66,16 @@ BugInfo[int] updateBugs()
 	stderr.writefln("Fetching comments...");
 	auto comments = getComments(bugs.map!(bug => bug.id).array);
 
+	stderr.writefln("Fetching attachments...");
+	auto attachments = getAttachments(bugs.map!(bug => bug.id).array);
+
 	BugInfo[int] result;
 	foreach (bug; bugs)
-		result[bug.id] = BugInfo(bug, comments.get(bug.id, null));
+		result[bug.id] = BugInfo(
+			bug,
+			comments.get(bug.id, null),
+			attachments.get(bug.id, null),
+		);
 
 	stderr.writeln("Saving bug data...");
 	foreach (id, ref data; result)
@@ -159,6 +169,15 @@ void saveResults(BugInfo[int] bugs)
 		writeIfNecessary("%s/issue.url".format(dir), "[InternetShortcut]\r\nURL=%s".format(url));
 		writeIfNecessary("%s/issue.desktop".format(dir), "[Desktop Entry]\nURL=%s\nType=Link".format(url));
 
+		foreach (attach; bug.attachments)
+		{
+			enforce(!attach.file_name.contains('/'), "Bad file name: " ~ attach.file_name);
+
+			auto path = dir.buildPath("attachments", attach.id.text, attach.file_name);
+			ensurePathExists(path);
+			writeIfNecessary(path, Base64.decode(attach.data));
+		}
+
 		/*{
 			auto ct = SysTimeToFILETIME(creationTimes[n]);
 			auto mt = SysTimeToFILETIME(modificationTimes[n]);
@@ -170,8 +189,8 @@ void saveResults(BugInfo[int] bugs)
 	writeIfNecessary(descriptionFile, descriptions.sortedValues.join("\n"));
 }
 
-void writeIfNecessary(string fn, string data)
+void writeIfNecessary(string fn, const(void)[] data)
 {
-	if (!fn.exists || fn.getSize() != data.length || fn.readText() != data)
+	if (!fn.exists || fn.getSize() != data.length || fn.read() != data)
 		std.file.write(fn, data);
 }

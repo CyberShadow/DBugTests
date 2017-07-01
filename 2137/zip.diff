@@ -1,0 +1,90 @@
+1c1
+< // Written in the D programming language.
+---
+> import std.file, std.stdio, std.gc, std.zlib, std.date, std.intrinsic;
+3,32d2
+< /**
+<  * Read/write data in the $(LINK2 http://www.info-_zip.org, zip archive) format.
+<  * Makes use of the etc.c.zlib compression library.
+<  *
+<  * Bugs: 
+<  *	$(UL
+<  *	$(LI Multi-disk zips not supported.)
+<  *	$(LI Only Zip version 20 formats are supported.)
+<  *	$(LI Only supports compression modes 0 (no compression) and 8 (deflate).)
+<  *	$(LI Does not support encryption.)
+<  *	$(LI $(BUGZILLA 592))
+<  *	$(LI $(BUGZILLA 1832))
+<  *	$(LI $(BUGZILLA 2137))
+<  *	$(LI $(BUGZILLA 2138))
+<  *	)
+<  *
+<  * Macros:
+<  *	WIKI = Phobos/StdZip
+<  */
+< 
+< module std.zip;
+< 
+< private import std.zlib;
+< private import std.date;
+< private import std.intrinsic;
+< 
+< //debug=print;
+< 
+< /** Thrown on error.
+<  */
+41,43d10
+< /**
+<  * A member of the ZipArchive.
+<  */
+92,96c59
+< /**
+<  * Object representing the entire archive.
+<  * ZipArchives are collections of ArchiveMembers.
+<  */
+< class ZipArchive
+---
+> class ZipArchiveCompressOnFly
+144a108,113
+>         de.crc32 = std.zlib.crc32(0, cast(void[])de.expandedData);
+>         de.compressedData = cast(ubyte[])std.zlib.compress(cast(void[])de.expandedData);
+>         de.compressedData = de.compressedData[2 .. de.compressedData.length - 4];
+>         de.compressedSize = de.compressedData.length;
+>         de.expandedSize = de.expandedData.length;
+>         de.expandedData = null;
+166c135,136
+<     {	uint i;
+---
+>     {
+>         uint i;
+177,194d146
+< 	    de.expandedSize = de.expandedData.length;
+< 	    switch (de.compressionMethod)
+< 	    {
+< 		case 0:
+< 		    de.compressedData = de.expandedData;
+< 		    break;
+< 
+< 		case 8:
+< 		    de.compressedData = cast(ubyte[])std.zlib.compress(cast(void[])de.expandedData);
+< 		    de.compressedData = de.compressedData[2 .. de.compressedData.length - 4];
+< 		    break;
+< 
+< 		default:
+< 		    throw new ZipException("unsupported compression method");
+< 	    }
+< 	    de.compressedSize = de.compressedData.length;
+< 	    de.crc32 = std.zlib.crc32(0, cast(void[])de.expandedData);
+< 
+302c253,254
+<     {	int iend;
+---
+>     {
+>         int iend;
+406c358,359
+<     {	uint namelen;
+---
+>     {
+>         uint namelen;
+457a411
+>         assert(0);

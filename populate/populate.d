@@ -105,8 +105,7 @@ void saveResults(BugInfo[int] bugs)
 		descriptions = descriptionFile
 			.readText
 			.splitLines
-			.map!(line => line.findSplit(" "))
-			.map!(x => tuple(x[0].to!int, x[2]))
+			.map!(line => tuple(line.findSplit(" ")[0].to!int, line))
 			.assocArray;
 
 	foreach (n, ref bug; bugs)

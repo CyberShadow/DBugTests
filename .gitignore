@@ -16,7 +16,7 @@
 *.tar.*
 *.7z
 
-/descript.ion
+/bugs/descript.ion
 comments.txt
 issue.url
 issue.desktop

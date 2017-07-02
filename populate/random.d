@@ -25,7 +25,11 @@ alias seenFile = issue =>
 	.dirName
 	.buildPath("bugs", issue, ".seen");
 
-alias openIssue = line => !line.canFind("[resolved:") && !line.canFind("[?]") && !line.canFind("[pull]");
+alias openIssue = line =>
+	!line.canFind("[resolved:") &&
+	!line.canFind("[?]") &&
+	!line.canFind("[D1 (retired)]") &&
+	!line.canFind("[pull]");
 
 void main(string[] args)
 {

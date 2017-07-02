@@ -135,7 +135,7 @@ void saveResults(BugInfo[int] bugs)
 			relevant = false;
 			subject = "[pull]" ~ subject;
 		}
-		if (relevant && bug.bug.version_ == "D1")
+		if (relevant && bug.bug.version_ == "D1 (retired)")
 		{
 			relevant = false;
 			subject = "[" ~ bug.bug.version_ ~ "]" ~ subject;

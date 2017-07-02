@@ -1,3 +1,7 @@
+struct S{ void delegate() dg; }
+struct T{ int delegate() dg; }
+
+int x;
 S a = {{}};              // fail
 S b = {{;}};             // fail
 S c = {{x=0;}};          // fail

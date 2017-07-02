@@ -1,0 +1,14 @@
+.. before 2.063 : test.d(24): Error: mutable method test.A1.opAssign is not callable using a immutable object
+
+Fixed : https://github.com/dlang/dmd/pull/2665 (issue 9665)
+
+2.064 ... 2.066 : works
+
+Broken: https://github.com/dlang/dmd/pull/4144 (issue 4421)
+
+2.067 ... 2.071 : test.d(12): Error: struct test.B destructors, postblits and invariants are not allowed in overlapping fields a1 and a2
+
+Fixed: https://github.com/dlang/dmd/pull/5830
+
+2.072 ... now   : works
+

@@ -93,6 +93,8 @@ void main(string[] args)
 		.front
 	;
 
+	writefln("Opening issue %s", issue);
+
 	spawnProcess(["emacsclient",
 			"--no-wait",
 			thisExePath

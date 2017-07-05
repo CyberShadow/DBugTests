@@ -18,6 +18,8 @@
 *.ilk
 *.obj
 *.o
+*.so
+*.dll
 *.lib
 
 .svn

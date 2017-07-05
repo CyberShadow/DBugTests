@@ -1,5 +1,5 @@
 import myPackage.PackagedClass;
 
 class RootClass {
-  PackagedClass variable;
+//  PackagedClass variable;
 }

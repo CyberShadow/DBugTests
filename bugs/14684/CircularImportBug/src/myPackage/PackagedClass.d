@@ -1,7 +1,5 @@
-module myPackage.PackagedClass;
-
-import RootClass;
+//import RootClass;
 
 class PackagedClass {
-  RootClass variable;
+//  RootClass variable;
 }

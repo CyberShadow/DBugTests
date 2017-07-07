@@ -1,0 +1,26 @@
+       |import std.stdio;
+       |struct MyFile
+       |{
+      1|    this(string filename) { }
+      1|    auto byLine() { return 0; }
+       |}
+       |struct Wrapper
+       |{
+      3|    this(Args...)(Args args) {}
+       |}
+       |auto func(F = std.stdio.File)(bool[] args)
+       |{
+       |    import std.algorithm.iteration : map;
+     17|    foreach (x; args.map!(arg => arg ?  Wrapper(
+0000000|                                            F("A").byLine) :
+      2|                                        Wrapper(
+       |                                            0)))
+       |    { }
+       |}
+       |void main()
+       |{
+       |    import std.algorithm : each;
+      1|    func!MyFile([ true, false ]);
+      1|    func([ false ]);
+       |}
+test.d is 87% covered

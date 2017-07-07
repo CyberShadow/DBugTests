@@ -1,0 +1,21 @@
+[
+ {
+  "kind" : "module",
+  "file" : "test.d",
+  "members" : [
+   {
+    "name" : "SomeEnum",
+    "kind" : "enum",
+    "line" : 1,
+    "char" : 1
+   },
+   {
+    "name" : "a",
+    "kind" : "variable",
+    "line" : 2,
+    "char" : 24,
+    "deco" : "i"
+   }
+  ]
+ }
+]

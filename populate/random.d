@@ -47,9 +47,10 @@ void main(string[] args)
 		.splitLines()
 	;
 
+	enum topIssue = 17500;
+
 	if (progress)
 	{
-		enum topIssue = 17500;
 		long totalIssues = lines
 			.filter!openIssue
 			.map!(line => line.split[0])
@@ -89,6 +90,7 @@ void main(string[] args)
 		.randomCover
 		.filter!openIssue
 		.map!(line => line.split[0])
+		.filter!(issue => issue.to!int < topIssue)
 		.filter!(issue => !issue.seenFile.exists)
 		.front
 	;

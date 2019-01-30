@@ -11,6 +11,7 @@ import std.datetime.systime;
 import std.exception;
 import std.file;
 import std.format;
+import std.parallelism;
 import std.path;
 import std.stdio;
 import std.string;
@@ -71,10 +72,18 @@ BugInfo[int] updateBugs()
 
 BugInfo[int] readBugs()
 {
+	static string[] bugDirs;
+	bugDirs = dirEntries("../bugs", SpanMode.shallow)
+		.filter!(de => de.isDir && de.buildPath("data.json").exists)
+		.map!(de => de.name)
+		.array;
+
+	static BugInfo parseBug(string bugDir) { return bugDir.buildPath("data.json").readText.jsonParse!BugInfo; }
+	auto parsedBugs = taskPool.amap!parseBug(bugDirs);
+
 	BugInfo[int] result;
-	foreach (de; dirEntries("../bugs", SpanMode.shallow))
-		if (de.isDir && de.buildPath("data.json").exists)
-			result[de.baseName.to!int] = de.buildPath("data.json").readText.jsonParse!BugInfo;
+	foreach (i; 0..bugDirs.length)
+		result[bugDirs[i].baseName.to!int] = parsedBugs[i];
 	return result;
 }
 

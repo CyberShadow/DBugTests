@@ -76,15 +76,24 @@ static struct Bug
 		string requestee;
 	}
 
+	struct UserDetail
+	{
+		string real_name, email, name;
+		int id;
+	}
+
 	string priority;
 	int[] blocks;
 	string creator;
+	UserDetail creator_detail;
 	string last_change_time;
 	bool is_cc_accessible;
 	string[] keywords;
 	string[] cc;
+	UserDetail[] cc_detail;
 	string url;
 	string assigned_to;
+	UserDetail assigned_to_detail;
 	string[] groups;
 	string[] see_also;
 	int id;
@@ -96,7 +105,7 @@ static struct Bug
 	string resolution;
 	string classification;
 @JSONName("alias")
-	string alias_;
+	string[] aliases;
 	string op_sys;
 	string status;
 	string summary;
@@ -111,6 +120,7 @@ static struct Bug
 	string product;
 	string target_milestone;
 	bool is_confirmed;
+	string deadline;
 }
 
 Bug[] getBugs(SysTime since)
@@ -175,6 +185,7 @@ struct Comment
 	string text;
 	string creation_time;
 	string id;
+	string[] tags;
 }
 
 Comment[][int] getComments(int[] ids)

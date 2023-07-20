@@ -1,5 +1,6 @@
 module bugzilla;
 
+import core.thread : Thread;
 import core.time;
 
 import std.array;
@@ -32,7 +33,22 @@ T apiCall(T, P)(string method, P params)
 		urlParams["params"] = [params].toJson();
 	auto url = site ~ "jsonrpc.cgi?" ~ encodeUrlParameters(urlParams);
 	scope(failure) stderr.writeln(url);
-	auto jsonText = url.get();
+	char[] jsonText;
+	foreach_reverse (attempt; 0 .. 5)
+		try
+		{
+			jsonText = url.get();
+			break;
+		}
+		catch (Exception e)
+			if (attempt)
+			{
+				stderr.writeln("Error: ", e.msg);
+				Thread.sleep(15.seconds);
+				stderr.writeln("Retrying...");
+			}
+			else
+				throw e;
 	scope(failure) stderr.writeln(jsonText);
 	auto reply = jsonText.jsonParse!Reply();
 	enforce(reply.error is null, "Server error: " ~ reply.error);

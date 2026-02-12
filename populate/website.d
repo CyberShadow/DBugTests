@@ -9,6 +9,7 @@ import std.file;
 import std.format;
 import std.path;
 import std.regex;
+import std.process;
 import std.stdio;
 import std.string;
 
@@ -41,6 +42,11 @@ void main()
 
 	stderr.writeln("Generating index page...");
 	writeIndexPage(ids, bugs);
+
+	stderr.writeln("Building search index...");
+	auto ret = spawnProcess(["npx", "pagefind", "--site", outputDir]).wait();
+	if (ret != 0)
+		stderr.writeln("Warning: pagefind failed (exit code ", ret, ")");
 
 	stderr.writeln("Done.");
 }
@@ -148,10 +154,12 @@ void writeIndexPage(int[] ids, ref BugInfo[int] bugs)
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>D Language Bugzilla Archive</title>
 <link rel="stylesheet" href="style.css">
+<link href="/pagefind/pagefind-ui.css" rel="stylesheet">
 </head>
 <body>
-<div class="container">
+<div class="container" data-pagefind-ignore>
 <h1>D Language Bugzilla Archive</h1>
+<div id="search"></div>
 <p>` ~ ids.length.text ~ ` bugs archived from <a href="` ~ site ~ `">` ~ htmlEsc(site) ~ `</a>.</p>
 <table>
 <thead>
@@ -203,6 +211,8 @@ document.querySelectorAll("th").forEach((th, i) => {
   });
 });
 </script>
+<script src="/pagefind/pagefind-ui.js"></script>
+<script>new PagefindUI({ element: "#search", showSubResults: true });</script>
 </body>
 </html>
 `;
@@ -227,7 +237,7 @@ void writeBugPage(int id, ref BugInfo info)
 <link rel="stylesheet" href="../../style.css">
 </head>
 <body>
-<div class="container">
+<div class="container" data-pagefind-body>
 <div class="nav"><a href="../../">&larr; Back to index</a> | <a href="` ~ attrEsc(site ~ "show_bug.cgi?id=" ~ id.text) ~ `">Original Bugzilla link</a></div>
 <div class="bug-header">
 <h1>Bug ` ~ id.text ~ ` &ndash; ` ~ htmlEsc(bug.summary) ~ `</h1>

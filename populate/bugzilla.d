@@ -33,11 +33,11 @@ T apiCall(T, P)(string method, P params)
 		urlParams["params"] = [params].toJson();
 	auto url = site ~ "jsonrpc.cgi?" ~ encodeUrlParameters(urlParams);
 	scope(failure) stderr.writeln(url);
-	char[] jsonText;
+	string jsonText;
 	foreach_reverse (attempt; 0 .. 5)
 		try
 		{
-			jsonText = url.get();
+			jsonText = (cast(char[]) url.get()).idup;
 			break;
 		}
 		catch (Exception e)
@@ -76,6 +76,28 @@ SysTime getTime()
 	}
 	Time time = apiCall!Time("Bugzilla.time", null);
 	return time.db_time.parseTime!timeFormat;
+}
+
+/// Wrapper that deserializes from either a JSON string or a JSON array of strings.
+struct StringOrStringArray
+{
+	string[] values;
+	alias values this;
+
+	static StringOrStringArray fromJSON(JSONFragment frag)
+	{
+		auto json = frag.json;
+		if (json.length && json[0] == '[')
+			return StringOrStringArray(json.jsonParse!(string[]));
+		if (json.length && json[0] == '"')
+		{
+			auto s = json.jsonParse!string;
+			return StringOrStringArray(s.length ? [s] : null);
+		}
+		return StringOrStringArray.init;
+	}
+
+	const(string[]) toJSON() const { return values; }
 }
 
 static struct Bug
@@ -121,7 +143,7 @@ static struct Bug
 	string resolution;
 	string classification;
 @JSONName("alias")
-	string[] aliases;
+	StringOrStringArray aliases;
 	string op_sys;
 	string status;
 	string summary;

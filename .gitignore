@@ -13,6 +13,9 @@
 /populate/random
 /populate/last-update.txt
 
+/populate/website
+/website
+
 *.exe
 *.pdb
 *.ilk

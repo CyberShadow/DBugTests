@@ -136,6 +136,10 @@ a { color: #1565c0; }
 .attachments { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 4px; margin-bottom: 16px; }
 .attachments table { font-size: 13px; }
 .nav { margin-bottom: 12px; font-size: 14px; }
+.pagination { margin: 16px 0; padding: 8px 0; font-size: 14px; }
+.pagination a, .pagination strong, .pagination .disabled, .pagination .ellipsis { margin: 0 2px; }
+.pagination strong { font-size: 15px; }
+.pagination .disabled { color: #999; }
 `;
 
 	auto fn = buildPath(outputDir, "style.css");
@@ -145,52 +149,98 @@ a { color: #1565c0; }
 
 void writeIndexPage(int[] ids, ref BugInfo[int] bugs)
 {
-	auto app = appender!string;
+	enum perPage = 100;
+	auto totalPages = (ids.length + perPage - 1) / perPage;
 
-	app ~= `<!DOCTYPE html>
+	// Path to root from a given page number (1-based).
+	static string rootPath(size_t page)
+	{
+		return page == 1 ? "" : "../../";
+	}
+
+	// File path for a given page number.
+	static string pagePath(size_t page)
+	{
+		if (page == 1)
+			return buildPath(outputDir, "index.html");
+		return format!"%s/page/%d/index.html"(outputDir, page);
+	}
+
+	// URL to link to a given page number, relative from the current page.
+	static string pageUrl(size_t from, size_t to)
+	{
+		if (from == to)
+			return "#";
+		if (to == 1)
+			return from == 1 ? "#" : "../../";
+		return (from == 1 ? "" : "../../") ~ format!"page/%d/"(to);
+	}
+
+	foreach (page; 1 .. totalPages + 1)
+	{
+		auto start = (page - 1) * perPage;
+		auto end = ids.length < page * perPage ? ids.length : page * perPage;
+		auto pageIds = ids[start .. end];
+		auto root = rootPath(page);
+
+		auto app = appender!string;
+
+		app ~= `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>D Language Bugzilla Archive</title>
-<link rel="stylesheet" href="style.css">
+<title>D Language Bugzilla Archive` ~ (page > 1 ? ` &ndash; Page ` ~ page.text : ``) ~ `</title>
+<link rel="stylesheet" href="` ~ root ~ `style.css">
 <link href="/pagefind/pagefind-ui.css" rel="stylesheet">
 </head>
 <body>
 <div class="container" data-pagefind-ignore>
-<h1>D Language Bugzilla Archive</h1>
+<h1><a href="` ~ root ~ `">D Language Bugzilla Archive</a></h1>
 <div id="search"></div>
 <p>` ~ ids.length.text ~ ` bugs archived from <a href="` ~ site ~ `">` ~ htmlEsc(site) ~ `</a>.</p>
-<table>
+`;
+
+		// Pagination nav
+		app ~= paginationHtml(page, totalPages,
+			(size_t p) => pageUrl(page, p));
+
+		app ~= `<table>
 <thead>
 <tr><th>ID</th><th>Status</th><th>Resolution</th><th>Severity</th><th>Component</th><th>GitHub</th><th>Summary</th></tr>
 </thead>
 <tbody>
 `;
 
-	foreach (id; ids)
-	{
-		auto bug = &bugs[id].bug;
-		auto gh = detectGitHubUrl(bugs[id]);
-		auto rowClass = bug.is_open ? "open" : "resolved";
+		foreach (id; pageIds)
+		{
+			auto bug = &bugs[id].bug;
+			auto gh = detectGitHubUrl(bugs[id]);
+			auto rowClass = bug.is_open ? "open" : "resolved";
 
-		app ~= format!`<tr class="%s">`(rowClass);
-		app ~= format!`<td><a href="bugs/%d/">%d</a></td>`(id, id);
-		app ~= `<td>` ~ htmlEsc(bug.status) ~ `</td>`;
-		app ~= `<td>` ~ htmlEsc(bug.resolution) ~ `</td>`;
-		app ~= `<td>` ~ htmlEsc(bug.severity) ~ `</td>`;
-		app ~= `<td>` ~ htmlEsc(bug.component) ~ `</td>`;
-		if (gh.url.length)
-			app ~= `<td><a href="` ~ attrEsc(gh.url) ~ `">` ~ htmlEsc(gh.label) ~ `</a></td>`;
-		else
-			app ~= `<td></td>`;
-		app ~= `<td>` ~ htmlEsc(bug.summary) ~ `</td>`;
-		app ~= "</tr>\n";
-	}
+			app ~= format!`<tr class="%s">`(rowClass);
+			app ~= format!`<td><a href="%sbugs/%d/">%d</a></td>`(root, id, id);
+			app ~= `<td>` ~ htmlEsc(bug.status) ~ `</td>`;
+			app ~= `<td>` ~ htmlEsc(bug.resolution) ~ `</td>`;
+			app ~= `<td>` ~ htmlEsc(bug.severity) ~ `</td>`;
+			app ~= `<td>` ~ htmlEsc(bug.component) ~ `</td>`;
+			if (gh.url.length)
+				app ~= `<td><a href="` ~ attrEsc(gh.url) ~ `">` ~ htmlEsc(gh.label) ~ `</a></td>`;
+			else
+				app ~= `<td></td>`;
+			app ~= `<td>` ~ htmlEsc(bug.summary) ~ `</td>`;
+			app ~= "</tr>\n";
+		}
 
-	app ~= `</tbody>
+		app ~= `</tbody>
 </table>
-</div>
+`;
+
+		// Bottom pagination
+		app ~= paginationHtml(page, totalPages,
+			(size_t p) => pageUrl(page, p));
+
+		app ~= `</div>
 <script>
 document.querySelectorAll("th").forEach((th, i) => {
   th.addEventListener("click", () => {
@@ -217,9 +267,57 @@ document.querySelectorAll("th").forEach((th, i) => {
 </html>
 `;
 
-	auto fn = buildPath(outputDir, "index.html");
-	ensurePathExists(fn);
-	std.file.write(fn, app[]);
+		auto fn = pagePath(page);
+		ensurePathExists(fn);
+		std.file.write(fn, app[]);
+	}
+}
+
+string paginationHtml(size_t current, size_t total, string delegate(size_t) urlFor)
+{
+	auto app = appender!string;
+	app ~= `<nav class="pagination">`;
+
+	if (current > 1)
+		app ~= `<a href="` ~ urlFor(current - 1) ~ `">&laquo; Prev</a> `;
+	else
+		app ~= `<span class="disabled">&laquo; Prev</span> `;
+
+	// Show: 1 ... [window around current] ... last
+	void pageLink(size_t p)
+	{
+		if (p == current)
+			app ~= `<strong>` ~ p.text ~ `</strong> `;
+		else
+			app ~= `<a href="` ~ urlFor(p) ~ `">` ~ p.text ~ `</a> `;
+	}
+
+	enum wing = 3;
+	size_t winStart = current > wing + 1 ? current - wing : 1;
+	size_t winEnd = current + wing < total ? current + wing : total;
+
+	if (winStart > 1)
+	{
+		pageLink(1);
+		if (winStart > 2)
+			app ~= `<span class="ellipsis">&hellip;</span> `;
+	}
+	foreach (p; winStart .. winEnd + 1)
+		pageLink(p);
+	if (winEnd < total)
+	{
+		if (winEnd < total - 1)
+			app ~= `<span class="ellipsis">&hellip;</span> `;
+		pageLink(total);
+	}
+
+	if (current < total)
+		app ~= `<a href="` ~ urlFor(current + 1) ~ `">Next &raquo;</a>`;
+	else
+		app ~= `<span class="disabled">Next &raquo;</span>`;
+
+	app ~= `</nav>` ~ "\n";
+	return app[];
 }
 
 void writeBugPage(int id, ref BugInfo info)

@@ -120,7 +120,7 @@ h1 { margin-top: 0; }
 h1 a { color: inherit; text-decoration: none; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th, td { padding: 6px 10px; border: 1px solid #ddd; text-align: left; }
-th { background: #f0f0f0; position: sticky; top: 0; cursor: pointer; }
+th { background: #f0f0f0; position: sticky; top: 0; }
 tr.open { background: #fffde7; }
 tr.resolved { background: #e8f5e9; }
 a { color: #1565c0; }
@@ -241,26 +241,6 @@ void writeIndexPage(int[] ids, ref BugInfo[int] bugs)
 			(size_t p) => pageUrl(page, p));
 
 		app ~= `</div>
-<script>
-document.querySelectorAll("th").forEach((th, i) => {
-  th.addEventListener("click", () => {
-    const table = th.closest("table");
-    const tbody = table.querySelector("tbody");
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const dir = th.dataset.dir === "asc" ? "desc" : "asc";
-    th.closest("thead").querySelectorAll("th").forEach(h => delete h.dataset.dir);
-    th.dataset.dir = dir;
-    rows.sort((a, b) => {
-      const av = a.children[i].textContent;
-      const bv = b.children[i].textContent;
-      const an = Number(av), bn = Number(bv);
-      if (!isNaN(an) && !isNaN(bn)) return dir === "asc" ? an - bn : bn - an;
-      return dir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
-    });
-    rows.forEach(r => tbody.appendChild(r));
-  });
-});
-</script>
 <script src="/pagefind/pagefind-ui.js"></script>
 <script>new PagefindUI({ element: "#search", showSubResults: true });</script>
 </body>
